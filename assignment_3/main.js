@@ -23,7 +23,12 @@ console.log('WEBSOCKETS ERROR')
     ws.addEventListener('message', message => {
         console.log('WEBSOCKETS MESSAGE:', message)
     });
-    
+
+    const incoming_message = JSON.parse(message.data);
+    if(incoming_message.Game !== our_game); {
+    return;
+    }
+    game_events = JSON.parse(incoming_message.Message);
 
 // 2D CANVAS STUFF
     const game = document.querySelector('canvas').getContext('2d');
