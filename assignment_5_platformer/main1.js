@@ -4,6 +4,7 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
     const render = document.querySelector('canvas').getContext('2d'); 
     let w, h; 
     const resize = () => {
+        //render canvas width & height shortened to w and h variables for ease of typing
         w = render.canvas.width = render.canvas.clientWidth * window.devicePixelRatio; 
         h = render.canvas.height = render.canvas.clientHeight * window.devicePixelRatio; 
     }; 
@@ -32,6 +33,7 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
             player_ay += 0.01; 
         }
     }); 
+    //to stop acceleration process?
     document.addEventListener('keyup', keyup => {
         if(keyup.key === 'ArrowRight') {
             arrow_right = false; 
@@ -44,18 +46,23 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
     // PLATFORM
     class Platform {
         constructor(x, y, w, h) {
+            //fancy variable?? Class?
             this.x = x; 
             this.y = y; 
             this.w = w; 
             this.h = h; 
         }
     }
+    //Array?
     const platforms = []; 
+    //platform positions
     platforms.push(new Platform(-0.25, -0.25, 3, 0.25)); 
     platforms.push(new Platform(0.125, 0.25, 4, 0.125)); 
     
     // ANIMATION LOOP
     const animation = timestamp => {
+        //unclear on what this variable is for
+        //moved above "camera" or translate function
         const PLAYER_ACCELERATION_X = 0.001; 
         if(arrow_right) {
             player_ax += PLAYER_ACCELERATION_X; 
@@ -73,6 +80,7 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
         //fall function
         player_ay -= 0.00098; 
         
+        //revised "landing" function to include landing on platforms
         let player_grounded = false; 
         platforms.forEach(platform => {
             if(platform.x <= player_x && player_x <= platform.x + platform.w && platform.y <= player_y && player_y + player_vy <= platform.y) {
@@ -88,6 +96,8 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
         }
     
         render.save(); 
+        //to make the "camera" follow the player to space initially unseen
+        //need some more thought on the maths of this equation
         render.translate(-player_x * w / 2, player_y * h / 2); 
         
         render.clearRect(player_x * w / 2, -player_y * h / 2, render.canvas.width, render.canvas.height); 
@@ -100,6 +110,7 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
         render.fillStyle = '#0ff'; 
         render.fillRect(-1000 * w, 0, 10000 * render.canvas.width, render.canvas.height / 2); 
         
+        //Creating the blue platform (shape only)
         render.fillStyle = '#00f'; 
         platforms.forEach(platform => {
             render.fillRect(platform.x * w / 2 + w / 2, -platform.y * h / 2 + h / 2, platform.w * w / 2, platform.h * h / 2); 
@@ -108,9 +119,11 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
         //creating the player, red ball
         render.fillStyle = '#f00'; 
         render.beginPath(); 
+        //y-axis added "-player_r * h /2" to change center point to bottom of circle?
         render.arc(player_x * w / 2 + w / 2, -player_y * h / 2 + h / 2 - player_r * h / 2, player_r * h / 2, 0, 2 * Math.PI); 
         render.fill(); 
-        
+
+       //counterpart to render.save 
         render.restore(); 
         window.requestAnimationFrame(animation); 
     }; 
