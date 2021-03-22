@@ -135,17 +135,17 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
         y += vy; 
         
         //Creating the bullets & detecting / handling collisions
-        render.fillStyle = '#fff';
+        render.fillStyle = '#000';
         bullets.forEach((bullet, i) => {
             const bx = bullet.x + bullet.w / 2, by = bullet.y - bullet.h / 2;
-            const px = x, py = y + r;
-            if(Math.sqrt(Math.pow(px - bx, 2) + Math.pow(py - by, 2)) * u < r * u) {
+            const px = x + r / 2, py = y + r / 2;
+            if(Math.sqrt(Math.pow(px - bx, 2) + Math.pow(py - by, 2)) * u < r / 2 * u) {
                 //deleting the bullet
                 bullets.splice(i, 1);
                 ammo++;
                 return;
             }
-            render.fillRect(bullet.x * u + w / 2, -bullet.y * u + u, bullet.w * u, bullet.h * u)
+            render.fillRect(bullet.x * u, bullet.y * u, bullet.w * u, bullet.h * u)
         });
 
         // RENDER DYNAMIC OBJECTS
