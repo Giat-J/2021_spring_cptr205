@@ -64,7 +64,7 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
     }
     const bullets = [];
     //bullet co-ordinates
-    bullets.push(new Bullet(30, 30));
+    bullets.push(new Bullet(50, 30));
 
     let ammo = 0;
 
