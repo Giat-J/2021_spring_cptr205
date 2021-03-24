@@ -210,16 +210,16 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
             //RENDER PLAYER
             }
         }); 
-    }); 
-    render.drawImage(player_avatar, +frame_number * IMG_SIDE, player_direction * IMG_SIDE, IMG_SIDE, IMG_SIDE, x, y, IMG_SIDE, IMG_SIDE); 
 
-    render.restore(); 
-    //SHOWING AMMO PICKED UP
-    render.fillStyle = '#000';
-    render.font = 'bold 64px arial';
-    render.fillText(`${ammo} AMMO`, 50, 114);
-    
+        render.drawImage(player_avatar, +frame_number * IMG_SIDE, player_direction * IMG_SIDE, IMG_SIDE, IMG_SIDE, x, y, IMG_SIDE, IMG_SIDE); 
+
+        render.restore(); 
+        //SHOWING AMMO PICKED UP
+        render.fillStyle = '#000';
+        render.font = 'bold 64px arial';
+        render.fillText(`${ammo} AMMO`, 50, 114);
+        
+        window.requestAnimationFrame(animation); 
+    }; 
     window.requestAnimationFrame(animation); 
-}; 
-window.requestAnimationFrame(animation); 
 }); 
