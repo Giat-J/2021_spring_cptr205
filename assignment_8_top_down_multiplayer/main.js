@@ -2,8 +2,10 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
 
     // INITIALIZE WEBSOCKET
     const socket = new WebSocket('wss://southwestern.media/game_dev'); 
+    let socketOpen = false
     socket.addEventListener('open', open => {
         console.log('WEBSOCKET STARTED'); 
+        socketOpen = true
     }); 
     
     // INITIALIZE CANVAS
@@ -25,15 +27,15 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
     player_avatar.src = 'images/player_spritesheet.png'; 
 
     // PLAYER INPUT (EASIER METHOD)
-    const movement = {ArrowRight: false, ArrowLeft: false, ArrowDown: false, ArrowUp: false}; 
+    const movement = {ArrowRight: false, ArrowLeft: false, ArrowDown: false, ArrowUp: false, Space:false}; 
     document.addEventListener('keydown', keydown => {
-        if(movement.hasOwnProperty(keydown.key)) {
-            movement[keydown.key] = true; 
+        if(movement.hasOwnProperty(keydown.code)) {
+            movement[keydown.code] = true; 
         }
     }); 
     document.addEventListener('keyup', keyup => {
-        if(movement.hasOwnProperty(keyup.key)) {
-            movement[keyup.key] = false; 
+        if(movement.hasOwnProperty(keyup.code)) {
+            movement[keyup.code] = false; 
         }
     }); 
 
@@ -58,9 +60,9 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
     }); 
     const enemy_avatar = new Image(); 
     enemy_avatar.src = 'images/enemy.png'; 
-    socket.addEventListener('beforeunload', beforeunload => {
+    window.addEventListener('unload', unload => {
         send('goodbye'); 
-        beforeunload['returnValue'] = null; 
+        unload['returnValue'] = null; 
     }); 
 
     //PATTERNS
@@ -96,8 +98,8 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
     //BOTTOM WALL
     rigid_bodies.push(new Rigid_Body(-128, 253, 384, 3)); 
 
-    //COLLECTIBLE: BULLETS
-    class Bullet {
+    //COLLECTIBLE: AMMO (CAP. A)
+    class Ammo {
         constructor(x, y) {
             this.x = x; 
             this.y = y; 
@@ -105,11 +107,24 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
             this.h = 5;
         }
     }
-    const bullets = [];
-    //bullet co-ordinates
-    bullets.push(new Bullet(50, 30));
+    const ammos = [];
+    //Ammo co-ordinates
+    ammos.push(new Ammo(50, 30));
+    ammos.push(new Ammo(100, 20));
 
     let ammo = 0;
+
+    //PROJECTILE: BULLET
+    class Bullet {
+        constructor(x, y, direction) {
+            this.x = x;
+            this.y = y;
+            this.w = 4;
+            this.h = 4;
+            this.direction = direction;
+        }
+    }
+    const bullets = []
 
     // ANIMATION LOOP
     //variables
@@ -133,7 +148,6 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
         render.fillStyle = patterns.rock; 
         render.fillRect(0, 0, w, h); 
             //CAMERA FUNCTION
-        render.scale(u, u);
         render.translate(-Math.floor(x / U_SCALE) * U_SCALE, -Math.floor(y / U_SCALE) * U_SCALE); 
         
         
@@ -149,6 +163,13 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
                 //PLACED AFTER PLAYER DIRECTION SO THAT FRAME ONLY ANIMATES WHEN KEY IS HELD DOWN
                 frame_number = !frame_number; 
             }
+        }
+
+        //PROJECTILE FUNCTION
+        // KEEP FRAME COUNT IN MULTIPLES OF 7
+        if(movement.Space && ammo > 0 && frame_count%14 == 0) {
+            bullets.push(new Bullet(x + IMG_SIDE / 2, y + IMG_SIDE / 2, player_direction));
+            ammo--;
         }
 
         // COLLIDERS (IMPASSABLE OBJECT FUNCTION)
@@ -173,44 +194,91 @@ window.addEventListener('DOMContentLoaded', DOMContentLoaded => {
                     y = rigid_body.y + rigid_body.h; 
                 }
             }
+            bullets.forEach((bullet, i) => {
+                if(rigid_body.y <= bullet.y + bullet.h && bullet.y < rigid_body.y + rigid_body.h && rigid_body.x <= bullet.x + bullet.w && bullet.x <= rigid_body.x + rigid_body.w) {
+                    bullets.splice(i, 1)
+                }
+            })
         }); 
         //COUNTERPART TO let vx = +right - +left; 
         //               let vy = +down - +up;
         x += vx; 
         y += vy; 
         if(vx || vy) {
-            send(JSON.stringify({x: x, y: y})); 
+            if(socketOpen){
+                send(JSON.stringify({x: x, y: y, bx: null, by: null})); 
+
+            }
         }
-        //Creating the bullets & detecting / handling collisions
+
+        //Creating the Ammos & detecting / handling collisions
         render.fillStyle = '#000';
-        bullets.forEach((bullet, i) => {
-            const bx = bullet.x + bullet.w / 2, by = bullet.y - bullet.h / 2;
+        ammos.forEach((obj, i) => {
+            const ax = obj.x + obj.w / 2, ay = obj.y - obj.h / 2;
             const px = x + r / 2, py = y + r / 2;
-            if(Math.sqrt(Math.pow(px - bx, 2) + Math.pow(py - by, 2)) * u < r / 2 * u) {
-                //deleting the bullet
-                bullets.splice(i, 1);
+            if(Math.sqrt(Math.pow(px - ax, 2) + Math.pow(py - ay, 2)) < r / 2) {
+                //deleting the Ammo
+                ammos.splice(i, 1);
                 ammo++;
                 return;
             }
-            render.fillRect(bullet.x * u, bullet.y * u, bullet.w * u, bullet.h * u)
+            // render.drawImage(ammo_image, x, y, w, h)
+            render.fillRect(obj.x, obj.y, obj.w, obj.h)
         });
 
         // RENDER DYNAMIC OBJECTS
         //RENDERING ALL RIGID BODIES
         render.fillStyle = patterns.crate; 
+   
         rigid_bodies.forEach(rigid_body => {
             render.fillRect(rigid_body.x, rigid_body.y, rigid_body.w, rigid_body.h); 
         });
         //ENEMIES 
         Object.values(enemies).forEach(enemy => {
-        
             render.drawImage(enemy_avatar, 0, 0, IMG_SIDE, IMG_SIDE, enemy.x, enemy.y, IMG_SIDE, IMG_SIDE); 
             if(enemy.x < x + IMG_SIDE && x < enemy.x + IMG_SIDE && enemy.y < y + IMG_SIDE && y < enemy.y) {
                 console.log('COLLISION'); 
-            //RENDER PLAYER
+            }
+            render.fillStyle = '#faa'
+            
+            if(enemy.bx){
+                render.fillRect(enemy.bx, enemy.by, 4, 4)
+
+                //check if bullet overlaps with player if so do _____
+                if(y <= enemy.by + 4 && enemy.by < y + IMG_SIDE && x <= enemy.bx + 4 && enemy.bx <= x + IMG_SIDE) {
+                    console.log('hit')
+                    //hit, now do ____
+                }
+
+
             }
         }); 
+        
+        //RENDER PROJECTILE
+        render.fillStyle = '#faa'
+        bullets.forEach(bullet => {
+            if(bullet.direction === 0) {
+                bullet.x--;
+            }
+            if(bullet.direction === 1) {
+                bullet.x++;
+            }
+            if(bullet.direction === 2) {
+                bullet.y--;
+            }
+            if(bullet.direction === 3) {
+                bullet.y++;
+            }
 
+            if(socketOpen){
+
+                send(JSON.stringify({x: x, y: y, bx: bullet.x, by: bullet.y}));
+            }
+            render.fillRect(bullet.x, bullet.y, bullet.w, bullet.h)
+        }) 
+
+
+        //RENDER PLAYER
         render.drawImage(player_avatar, +frame_number * IMG_SIDE, player_direction * IMG_SIDE, IMG_SIDE, IMG_SIDE, x, y, IMG_SIDE, IMG_SIDE); 
 
         render.restore(); 
